@@ -10,16 +10,17 @@ class CartPoleEnvironment:
 
     Attributes:
         _env: A gym.Env object representing the CartPole-v1 environment.
-        out_shape: Dimensions (width, height) for cropping the environment output.
-        out_transforms: Image transforms applied to the cropped environment output.
+        _out_transforms (Optional): Image transforms applied to the cropped environment output.
+        _pre_crop_transforms: Image transforms consisting of image resizing and conversion.
+        _CROP_WIDTH: Constant indicating maximum width of crop.
     """
     def __init__(self, crop_width: int = const.CROP_WIDTH, out_transforms: Optional[transforms.Compose] = None):
         """Initializes environment and stores attributes."""
         self._env = gym.make('CartPole-v1')
         self._out_transforms = out_transforms
-        self.crop_width = crop_width
+        self._CROP_WIDTH = crop_width
 
-        self.pre_crop_transforms = transforms.Compose([
+        self._pre_crop_transforms = transforms.Compose([
             transforms.ToPILImage(),
             transforms.Resize(
                 const.RESIZE_SHAPE,
@@ -68,9 +69,17 @@ class CartPoleEnvironment:
         image: An image in the format (H, W, C).
         position: An integer representing the screen x-coordinate.
         """
-        image = self.pre_crop_transforms(image)
-        width_min = position - self.crop_width
-        width_max = position + self.crop_width
+        image = self._pre_crop_transforms(image)
+
+        width_min = position - self._CROP_WIDTH
+        width_max = position + self._CROP_WIDTH
+        if width_min < 0:
+            width_min = 0
+            width_max = self._CROP_WIDTH
+        if width_max > const.RESIZE_SHAPE[1]:
+            width_min = const.RESIZE_SHAPE[1] - self._CROP_WIDTH
+            width_max = const.RESIZE_SHAPE[1]
+
         image = image[:, const.CROP_HEIGHT_MIN:const.CROP_HEIGHT_MAX, width_min:width_max]
 
         return image
