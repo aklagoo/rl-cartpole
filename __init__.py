@@ -1,1 +1,2 @@
 from CartPoleEnvironment import CartPoleEnvironment
+from ReplayMemory import ReplayMemory
